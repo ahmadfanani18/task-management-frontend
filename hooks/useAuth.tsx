@@ -2,11 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import toast from 'react-hot-toast'
+import { apiClient } from '@/lib/api'
 
 interface User {
   id: string
   email: string
   name: string | null
+  avatarUrl?: string | null
 }
 
 interface AuthContextType {
@@ -29,11 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function checkAuth() {
     try {
-      const res = await fetch('/api/auth/me')
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data.user)
-      }
+      const data = await apiClient.get<{ user: User }>('/auth/me')
+      setUser(data.user)
     } catch {
       setUser(null)
     } finally {
@@ -42,39 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(email: string, password: string) {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.error || 'Login gagal')
-    }
-
-    const data = await res.json()
-    setUser(data.user)
+    await apiClient.post('/auth/login', { email, password })
+    await checkAuth()
     toast.success('Berhasil login')
   }
 
   async function register(email: string, password: string, name?: string) {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.error || 'Registrasi gagal')
-    }
-
+    await apiClient.post('/auth/register', { email, password, name })
     toast.success('Registrasi berhasil')
   }
 
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await apiClient.post('/auth/logout')
     setUser(null)
     toast.success('Berhasil logout')
   }

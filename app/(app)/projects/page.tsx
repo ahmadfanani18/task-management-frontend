@@ -1,17 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { api } from '@/lib/api'
+import { useWorkspaces } from '@/hooks/useApi'
+import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
-
-interface Workspace {
-  id: string
-  name: string
-  slug: string
-  _count: { projects: number; members: number }
-}
+import type { Workspace } from '@/types'
 
 export default function ProjectsPage() {
+  const { user } = useAuth()
+  const { getWorkspaces } = useWorkspaces()
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -22,8 +19,8 @@ export default function ProjectsPage() {
 
   async function loadWorkspaces() {
     try {
-      const data = await api.get<{ workspaces: Workspace[] }>('/workspaces')
-      setWorkspaces(data.workspaces)
+      const data = await getWorkspaces()
+      setWorkspaces(data)
     } catch (err) {
       if (err instanceof Error) setError(err.message)
     } finally {
@@ -71,8 +68,8 @@ export default function ProjectsPage() {
               </div>
               <div className="p-4">
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                  <span>{workspace._count.projects} projects</span>
-                  <span>{workspace._count.members} members</span>
+                  <span>{workspace._count?.projects || 0} projects</span>
+                  <span>{workspace._count?.members || 0} members</span>
                 </div>
                 <div className="flex gap-2">
                   <button className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200">
